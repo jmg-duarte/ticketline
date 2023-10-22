@@ -2,6 +2,7 @@
 
 TODO:
 - Make the httpx calls async to speed up retrieving pages
+- Add some kind of storage to know when "unseen" events pop up
 """
 
 from dataclasses import dataclass
@@ -9,6 +10,11 @@ from typing import Optional, Self
 import httpx
 from bs4 import BeautifulSoup
 import re
+
+import smtplib, ssl, os
+from datetime import date
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 BASE_URL = "https://ticketline.sapo.pt"
 
@@ -89,6 +95,21 @@ def scrape_query_results(query: str) -> list[Event]:
     )
     return [Event.from_html(html) for html in events]
 
+def send_html_email(html: str):
+    port = 465
+    email = os.getenv("EMAIL_ADDRESS")
+    password = os.getenv("EMAIL_PASSWORD")
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = f"TimeOut Summary for {date.today()}"
+    message["From"] = email
+    message["To"] = email
+    message.attach(MIMEText(html, "html", "utf-8"))
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+        server.login(email, password)
+        server.send_message(message)
 
 if __name__ == "__main__":
     events = scrape_query_results(query)
@@ -99,5 +120,5 @@ if __name__ == "__main__":
         </body>
     </html>
     """
-    print(html)
 
+    send_html_email(html)
