@@ -1,8 +1,9 @@
 name: "Scrape for events"
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 0 * * MON"
 
 jobs:
   scrape:
@@ -15,3 +16,6 @@ jobs:
           cache: "pip"
       - run: pip install -r requirements.txt
       - run: python main.py
+        env:
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
